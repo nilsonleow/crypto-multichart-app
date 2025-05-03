@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client"; // используем createRoot для React 18
 
 const availableSymbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT"];
 const intervals = ["1", "5", "15", "60", "240", "D"];
@@ -104,5 +104,6 @@ const App = () => {
 
 const container = document.getElementById("root");
 if (container) {
-  ReactDOM.render(<App />, container);
+  const root = ReactDOM.createRoot(container); // создаем корень для React 18
+  root.render(<App />);
 }
