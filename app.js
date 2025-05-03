@@ -1,8 +1,53 @@
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
+
+// Список доступных символов и интервалов
+const availableSymbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT"];
+const intervals = ["1", "5", "15", "60", "240", "D"];
+
+// Компонент для отображения виджета TradingView
+const TradingViewWidget = ({ symbol, interval, theme }) => {
+  return (
+    <iframe
+      title={symbol}
+      src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_${symbol}&symbol=BINANCE:${symbol}&interval=${interval}&theme=${theme}&style=1&toolbarbg=F1F3F6&studies=[]&hideideas=1&withdateranges=1&hide_side_toolbar=0&allow_symbol_change=1&save_image=0&locale=ru`}
+      width="100%"
+      height="400"
+      frameBorder="0"
+      allowTransparency={true}
+      scrolling="no"
+    ></iframe>
+  );
+};
+
+// Компонент для отображения каждого графика с возможностью смены символа и интервала
+const ChartCard = ({ index, selected, onChangeSymbol, interval, onChangeInterval, theme }) => {
+  return (
+    <div style={{ background: theme === "dark" ? "#2a2a2a" : "#f0f0f0", borderRadius: "8px", padding: "0.5rem", overflow: "hidden" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+        <select value={selected} onChange={(e) => onChangeSymbol(index, e.target.value)} style={{ padding: "0.2rem" }}>
+          {availableSymbols.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <select value={interval} onChange={(e) => onChangeInterval(index, e.target.value)} style={{ padding: "0.2rem" }}>
+          {intervals.map((i) => (
+            <option key={i} value={i}>{i}</option>
+          ))}
+        </select>
+      </div>
+      <TradingViewWidget symbol={selected} interval={interval} theme={theme} />
+    </div>
+  );
+};
+
+// Основной компонент приложения
 const App = () => {
   const [symbols, setSymbols] = useState(() => JSON.parse(localStorage.getItem("symbols")) || ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]);
   const [chartIntervals, setChartIntervals] = useState(() => JSON.parse(localStorage.getItem("intervals")) || ["60", "60", "60", "60"]);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
+  // Сохранение изменений в localStorage
   useEffect(() => {
     localStorage.setItem("symbols", JSON.stringify(symbols));
   }, [symbols]);
@@ -15,23 +60,21 @@ const App = () => {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  // Логирование состояния
-  console.log('Symbols:', symbols);
-  console.log('Intervals:', chartIntervals);
-  console.log('Theme:', theme);
-
+  // Функция для изменения символа
   const handleSymbolChange = (index, newSymbol) => {
     const updated = [...symbols];
     updated[index] = newSymbol;
     setSymbols(updated);
   };
 
+  // Функция для изменения интервала
   const handleIntervalChange = (index, newInterval) => {
     const updated = [...chartIntervals];
     updated[index] = newInterval;
     setChartIntervals(updated);
   };
 
+  // Переключение темы
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
@@ -66,3 +109,14 @@ const App = () => {
     </div>
   );
 };
+
+// Добавление обработки ошибок
+const container = document.getElementById("root");
+if (container) {
+  try {
+    ReactDOM.render(<App />, container);
+  } catch (error) {
+    console.error("Ошибка при рендеринге приложения:", error);
+    container.innerHTML = "Произошла ошибка при загрузке приложения";
+  }
+}
