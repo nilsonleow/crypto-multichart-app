@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createChart } from "lightweight-charts";
 
-const CryptoChart = ({ symbol = "BTCUSDT" }) => {
+const TIMEFRAMES = {
+  '15m': '15m',
+  '1h': '1h',
+  '4h': '4h',
+  '1d': '1d'
+};
+
+const CryptoChart = ({ symbol = "BTCUSDT", interval = "15m" }) => {
   const chartContainerRef = useRef();
 
   useEffect(() => {
@@ -25,7 +32,7 @@ const CryptoChart = ({ symbol = "BTCUSDT" }) => {
 
     const candleSeries = chart.addCandlestickSeries();
 
-    fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=96`)
+    fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=96`)
       .then(res => res.json())
       .then(data => {
         const transformed = data.map(d => ({
@@ -44,20 +51,32 @@ const CryptoChart = ({ symbol = "BTCUSDT" }) => {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [symbol]);
+  }, [symbol, interval]);
 
   return <div ref={chartContainerRef} style={{ flex: 1 }} />;
 };
 
 const App = () => {
-  const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"];
+  const [selectedSymbols, setSelectedSymbols] = useState(["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]);
+  const [interval, setInterval] = useState("15m");
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", backgroundColor: "black", gap: 0, minHeight: "100vh" }}>
-      {symbols.map((symbol, i) => (
-        <CryptoChart key={i} symbol={symbol} />
-      ))}
+    <div style={{ backgroundColor: "black", minHeight: "100vh", color: "white" }}>
+      <div style={{ padding: "10px", display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap" }}>
+        <div>
+          <label>Таймфрейм:&nbsp;</label>
+          <select value={interval} onChange={(e) => setInterval(e.target.value)}>
+            {Object.keys(TIMEFRAMES).map(tf => (
+              <option key={tf} value={tf}>{tf}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0 }}>
+        {selectedSymbols.map((symbol, i) => (
+          <CryptoChart key={i} symbol={symbol} interval={interval} />
+        ))}
+      </div>
     </div>
   );
 };
-
-export default App;
