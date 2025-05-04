@@ -1,38 +1,63 @@
-// src/App.js
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createChart } from "lightweight-charts";
 
-const TradingViewWidget = ({ symbol }) => (
-  <iframe
-    title={symbol}
-    src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_${symbol}&symbol=BINANCE:${symbol}&theme=dark&style=1&toolbarbg=F1F3F6&studies=[]&hideideas=1&withdateranges=1&hide_side_toolbar=0&allow_symbol_change=1&save_image=0&locale=ru`}
-    width="100%"
-    height="100%"
-    frameBorder="0"
-    allowTransparency={true}
-    scrolling="no"
-  ></iframe>
-);
+const CryptoChart = ({ symbol = "BTCUSDT" }) => {
+  const chartContainerRef = useRef();
 
-const ChartCard = ({ symbol }) => (
-  <div style={{ background: "#2a2a2a", borderRadius: "8px", overflow: "hidden", height: "100%" }}>
-    <TradingViewWidget symbol={symbol} />
-  </div>
-);
+  useEffect(() => {
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { color: "#000" },
+        textColor: "#DDD"
+      },
+      grid: {
+        vertLines: { color: "#222" },
+        horzLines: { color: "#222" }
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        rightOffset: 5
+      },
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
+    });
 
-function App() {
-  const [symbols] = useState(["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]);
+    const candleSeries = chart.addCandlestickSeries();
 
+    fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=96`)
+      .then(res => res.json())
+      .then(data => {
+        const transformed = data.map(d => ({
+          time: d[0] / 1000,
+          open: parseFloat(d[1]),
+          high: parseFloat(d[2]),
+          low: parseFloat(d[3]),
+          close: parseFloat(d[4])
+        }));
+        candleSeries.setData(transformed);
+      });
+
+    const handleResize = () => {
+      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [symbol]);
+
+  return <div ref={chartContainerRef} style={{ flex: 1 }} />;
+};
+
+const App = () => {
+  const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"];
   return (
-    <div style={{ backgroundColor: "#000000", color: "#fff", minHeight: "100vh", display: "flex", flexWrap: "wrap", margin: "0", padding: "0" }}>
-      <div style={{ display: "flex", width: "100%", flexWrap: "wrap" }}>
-        {symbols.map((symbol, i) => (
-          <div key={i} style={{ width: "50%", height: "50%" }}>
-            <ChartCard symbol={symbol} />
-          </div>
-        ))}
-      </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", backgroundColor: "black", gap: 0, minHeight: "100vh" }}>
+      {symbols.map((symbol, i) => (
+        <CryptoChart key={i} symbol={symbol} />
+      ))}
     </div>
   );
-}
+};
 
 export default App;
